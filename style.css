@@ -46,6 +46,20 @@ header h1 {
     display: none;
 }
 
+#drop-area {
+    border: 2px dashed #00b900;
+    border-radius: 10px;
+    padding: 25px;
+    text-align: center;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+#drop-area.highlight {
+    background-color: rgba(0, 185, 0, 0.1);
+    border-color: #007700;
+}
+
 .file-label {
     display: inline-block;
     background-color: #00b900;
@@ -54,6 +68,7 @@ header h1 {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    margin-bottom: 15px;
 }
 
 .file-label:hover {
@@ -114,6 +129,12 @@ button:hover:not(:disabled) {
 button:disabled {
     background-color: #aaa;
     cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.small-button {
+    padding: 6px 12px;
+    font-size: 14px;
 }
 
 #loading {
@@ -172,6 +193,24 @@ button:disabled {
     margin-right: 30px; /* バックボタンとのバランス */
 }
 
+.settings-bar {
+    background-color: #f8f8f8;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.username-selector {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.username-selector label {
+    margin-right: 5px;
+    font-size: 14px;
+}
+
 .search-container {
     display: flex;
     align-items: center;
@@ -189,7 +228,7 @@ button:disabled {
     margin-right: 10px;
 }
 
-#search-prev, #search-next {
+#search-button, #search-prev, #search-next {
     background-color: #f2f2f2;
     color: #333;
     border: 1px solid #ddd;
@@ -204,7 +243,7 @@ button:disabled {
     padding: 0;
 }
 
-#search-prev:hover, #search-next:hover {
+#search-button:hover, #search-prev:hover, #search-next:hover {
     background-color: #e0e0e0;
 }
 
@@ -347,5 +386,16 @@ footer a:hover {
 
     #search-stats {
         margin-left: auto;
+    }
+    
+    .username-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .username-selector input,
+    .username-selector button {
+        width: 100%;
+        margin-top: 5px;
     }
 }
