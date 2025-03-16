@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedUserName = null;
 
     // ユーザー名と色のマッピング
-    const userColors = {};
+    let userColors = {};
     const colorPool = [
         '#FF6B6B', '#4ECDC4', '#FFD166', '#87BCDE', '#C38D9E',
         '#E27D60', '#85CDCA', '#E8A87C', '#C1C8E4', '#8860D0'
@@ -102,17 +102,23 @@ document.addEventListener('DOMContentLoaded', function() {
         loadButton.disabled = true;
         
         reader.onload = function(e) {
-            const text = e.target.result;
-            currentMessages = parseLINEChat(text);
-            
-            // ユーザー名の抽出
-            const usernames = extractUsernames(currentMessages);
-            createUsernameOptions(usernames);
-            
-            renderMessages(currentMessages);
-            loadingDiv.classList.add('hidden');
-            chatContainer.classList.remove('hidden');
-            chatTitle.textContent = file.name.replace('.txt', '');
+            try {
+                const text = e.target.result;
+                currentMessages = parseLINEChat(text);
+                
+                // ユーザー名の抽出（メッセージ送信者のみ）
+                const usernames = extractUniqueMessageSenders(currentMessages);
+                createUsernameOptions(usernames);
+                
+                renderMessages(currentMessages);
+                chatContainer.classList.remove('hidden');
+                chatTitle.textContent = file.name.replace('.txt', '');
+            } catch (error) {
+                console.error('エラーが発生しました:', error);
+                alert('ファイルの処理中にエラーが発生しました: ' + error.message);
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
         };
         
         reader.onerror = function() {
@@ -124,21 +130,18 @@ document.addEventListener('DOMContentLoaded', function() {
         reader.readAsText(file, 'utf-8');
     });
 
-    // メッセージからユーザー名を抽出
-    function extractUsernames(messages) {
+    // メッセージからユニークな送信者のみを抽出
+    function extractUniqueMessageSenders(messages) {
         const usernameSet = new Set();
         
-        // デフォルトのユーザー名を追加
-        const defaultNames = ["あなた", "You", "(あなた)", "（あなた）"];
-        defaultNames.forEach(name => usernameSet.add(name));
-        
-        // メッセージからユーザー名を追加
+        // メッセージからユーザー名を追加（送信者のみ）
         messages.forEach(msg => {
             if (msg.type === 'message' && msg.name) {
                 usernameSet.add(msg.name);
             }
         });
         
+        // デフォルトのユーザー名は含めない
         return Array.from(usernameSet);
     }
     
@@ -147,17 +150,12 @@ document.addEventListener('DOMContentLoaded', function() {
         usernameOptions.innerHTML = '';
         
         usernames.forEach((username, index) => {
-            const isDefault = ["あなた", "You", "(あなた)", "（あなた）"].includes(username);
-            
             const radioOption = document.createElement('div');
-            radioOption.className = 'radio-option' + (isDefault ? ' selected' : '');
+            radioOption.className = 'radio-option';
             radioOption.dataset.username = username;
             
-            // アバターの最初の文字を取得（日本語の場合も1文字）
-            const initial = username.charAt(0);
-            
             radioOption.innerHTML = `
-                <input type="radio" name="username" id="username-${index}" value="${username}" ${isDefault ? 'checked' : ''}>
+                <input type="radio" name="username" id="username-${index}" value="${username}">
                 <label for="username-${index}">${username}</label>
             `;
             
@@ -180,12 +178,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             usernameOptions.appendChild(radioOption);
-            
-            // デフォルトで最初のデフォルトユーザー名を選択
-            if (isDefault && selectedUserName === null) {
-                selectedUserName = username;
-            }
         });
+        
+        // デフォルトでは最初のユーザーを選択
+        if (usernames.length > 0 && selectedUserName === null) {
+            const firstOption = usernameOptions.querySelector('.radio-option');
+            if (firstOption) {
+                firstOption.click(); // クリックイベントを発火させて選択
+            }
+        }
     }
 
     // 「戻る」ボタンのクリック時の処理
@@ -474,13 +475,12 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.innerHTML = '';
         const fragment = document.createDocumentFragment();
         
-        // ユーザー名と色のマッピング
+        // 色のマッピングを再初期化
         userColors = {};
         colorIndex = 0;
         
-        // デフォルトの「自分」判定用名前リスト
-        const defaultUsernames = ["あなた", "You", "(あなた)", "（あなた）"];
-        const myUsernameList = selectedUserName ? [selectedUserName] : defaultUsernames;
+        // 自分のユーザー名設定
+        const myUsernameList = selectedUserName ? [selectedUserName] : [];
         
         messages.forEach((msg, index) => {
             if (msg.type === 'date') {
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fragment.appendChild(systemDiv);
             } else if (msg.type === 'message') {
                 // メッセージの向きを決定（自分のメッセージは右側に）
-                const isMyMessage = myUsernameList.some(name => 
+                const isMyMessage = myUsernameList.length > 0 && myUsernameList.some(name => 
                     msg.name === name || 
                     msg.name.includes(name)
                 );
