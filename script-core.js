@@ -1,8 +1,30 @@
 // アプリケーションのコアモジュール - 初期化と共通機能
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Core: 初期化を開始します');
+    
     // 要素の取得
     const chatMessages = document.getElementById('chat-messages');
     const chatContainer = document.getElementById('chat-container');
+
+    // 依存関係の確認
+    if (!window.parserManager) {
+        console.error('Core: parserManager が読み込まれていません');
+    }
+    if (!window.avatarManager) {
+        console.error('Core: avatarManager が読み込まれていません');
+    }
+    if (!window.messageRenderer) {
+        console.error('Core: messageRenderer が読み込まれていません');
+    }
+    if (!window.searchManager) {
+        console.error('Core: searchManager が読み込まれていません');
+    }
+    if (!window.fileHandler) {
+        console.error('Core: fileHandler が読み込まれていません');
+    }
+    if (!window.uiManager) {
+        console.error('Core: uiManager が読み込まれていません');
+    }
 
     // 共有変数の定義（グローバルアクセス用）
     window.lineViewer = {
@@ -27,20 +49,24 @@ document.addEventListener('DOMContentLoaded', function() {
         colorIndex: 0
     };
 
+    console.log('Core: グローバル状態を初期化しました');
+    
     // 初期化処理
     initializeApp();
 
     // アプリの初期化
     function initializeApp() {
+        console.log('Core: アプリの初期化を開始します');
+        
         // localStorage からユーザー設定を読み込む
         loadUserSettings();
         
         // ストレージ使用量の表示
-        window.avatarManager.updateStorageUsage();
+        if (window.avatarManager) {
+            window.avatarManager.updateStorageUsage();
+        }
         
-        // 各モジュールのイベントリスナーをセットアップ
-        window.fileHandler.setupEventListeners();
-        window.uiManager.setupEventListeners();
+        console.log('Core: アプリの初期化が完了しました');
     }
 
     // ユーザー設定を読み込む
@@ -53,9 +79,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     ...window.lineViewer.userSettings,
                     ...parsed
                 };
+                console.log('Core: ユーザー設定を読み込みました');
             }
         } catch (err) {
-            console.error('設定の読み込みに失敗しました:', err);
+            console.error('Core: 設定の読み込みに失敗しました:', err);
             // エラー時は初期設定を使用
             window.lineViewer.userSettings = {
                 colors: {},
@@ -66,24 +93,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // メッセージ表示をリセット
     function resetDisplay() {
+        console.log('Core: 表示をリセットします');
         chatMessages.innerHTML = '';
         window.lineViewer.currentStartIndex = 0;
         window.lineViewer.visibleMessages = [];
         window.lineViewer.hasReachedEnd = false;
-        window.searchManager.clearSearch();
+        
+        if (window.searchManager) {
+            window.searchManager.clearSearch();
+        }
     }
 
     // 初期メッセージを読み込む
     function loadInitialMessages() {
+        console.log('Core: 初期メッセージを読み込みます');
         if (window.lineViewer.rawMessages.length === 0) {
+            console.log('Core: メッセージがありません');
             chatMessages.innerHTML = '<div class="no-messages">メッセージが見つかりませんでした</div>';
             return;
         }
         
-        window.uiManager.loadMoreMessages(true);
-        
-        // さらに読み込むボタンの表示状態を更新
-        window.uiManager.updateLoadMoreButton();
+        if (window.uiManager) {
+            window.uiManager.loadMoreMessages(true);
+            window.uiManager.updateLoadMoreButton();
+            console.log('Core: メッセージを読み込みました');
+        } else {
+            console.error('Core: uiManager が見つかりません');
+        }
     }
 
     // グローバルに公開する関数
@@ -93,4 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resetDisplay,
         loadInitialMessages
     };
+    
+    console.log('Core: モジュールの初期化が完了しました');
 });
