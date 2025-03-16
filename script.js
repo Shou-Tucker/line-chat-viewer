@@ -5,11 +5,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadButton = document.getElementById('load-button');
     const reverseOrderCheckbox = document.getElementById('reverse-order');
     const dateFormatSelect = document.getElementById('date-format');
+    const myUsernameInput = document.getElementById('my-username');
     const loadingDiv = document.getElementById('loading');
     const chatContainer = document.getElementById('chat-container');
     const chatMessages = document.getElementById('chat-messages');
     const backButton = document.getElementById('back-button');
     const chatTitle = document.getElementById('chat-title');
+    const searchInput = document.getElementById('search-input');
+    const searchPrevButton = document.getElementById('search-prev');
+    const searchNextButton = document.getElementById('search-next');
+    const searchStats = document.getElementById('search-stats');
+
+    // 検索関連の変数
+    let searchResults = [];
+    let currentSearchIndex = -1;
 
     // ファイル選択時の処理
     fileInput.addEventListener('change', function(e) {
@@ -56,7 +65,112 @@ document.addEventListener('DOMContentLoaded', function() {
         chatContainer.classList.add('hidden');
         loadButton.disabled = false;
         chatMessages.innerHTML = '';
+        // 検索状態をリセット
+        clearSearch();
     });
+
+    // 検索関連のイベント
+    searchInput.addEventListener('input', function() {
+        performSearch(this.value);
+    });
+
+    searchPrevButton.addEventListener('click', function() {
+        navigateSearch(-1);
+    });
+
+    searchNextButton.addEventListener('click', function() {
+        navigateSearch(1);
+    });
+
+    // 検索実行関数
+    function performSearch(query) {
+        // 前回の検索結果をクリア
+        clearSearch();
+        
+        if (!query || query.length < 2) return;
+        
+        // メッセージ要素を全て取得
+        const allMessages = document.querySelectorAll('.message-content');
+        
+        // 検索文字列で一致する要素を探す
+        for (let i = 0; i < allMessages.length; i++) {
+            const messageContent = allMessages[i].textContent;
+            if (messageContent.toLowerCase().includes(query.toLowerCase())) {
+                searchResults.push(allMessages[i].closest('.message'));
+                
+                // ハイライト処理
+                const regex = new RegExp(escapeRegExp(query), 'gi');
+                allMessages[i].innerHTML = allMessages[i].textContent.replace(
+                    regex, 
+                    match => `<span class="highlight">${match}</span>`
+                );
+            }
+        }
+        
+        // 検索結果があれば最初の結果に移動
+        if (searchResults.length > 0) {
+            currentSearchIndex = 0;
+            highlightCurrentResult();
+            updateSearchStats();
+        } else {
+            searchStats.textContent = '0 件';
+        }
+    }
+    
+    // 検索ナビゲーション関数
+    function navigateSearch(direction) {
+        if (searchResults.length === 0) return;
+        
+        // 現在のハイライトを解除
+        if (currentSearchIndex >= 0) {
+            searchResults[currentSearchIndex].classList.remove('current-search-result');
+        }
+        
+        // インデックスを更新（循環させる）
+        currentSearchIndex = (currentSearchIndex + direction + searchResults.length) % searchResults.length;
+        
+        // 新しい結果をハイライト
+        highlightCurrentResult();
+        updateSearchStats();
+    }
+    
+    // 現在の検索結果をハイライト
+    function highlightCurrentResult() {
+        if (currentSearchIndex >= 0 && currentSearchIndex < searchResults.length) {
+            const currentElement = searchResults[currentSearchIndex];
+            currentElement.classList.add('current-search-result');
+            currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    // 検索状態表示を更新
+    function updateSearchStats() {
+        searchStats.textContent = `${currentSearchIndex + 1}/${searchResults.length} 件`;
+    }
+    
+    // 検索状態をクリア
+    function clearSearch() {
+        // ハイライトを解除
+        const highlightedElements = document.querySelectorAll('.highlight');
+        highlightedElements.forEach(el => {
+            const parent = el.parentNode;
+            parent.textContent = parent.textContent;
+        });
+        
+        // 現在の結果ハイライトを解除
+        const currentResults = document.querySelectorAll('.current-search-result');
+        currentResults.forEach(el => el.classList.remove('current-search-result'));
+        
+        // 検索状態リセット
+        searchResults = [];
+        currentSearchIndex = -1;
+        searchStats.textContent = '';
+    }
+    
+    // 正規表現用エスケープ関数
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
 
     // LINE履歴のパース・表示処理
     function processLINEChat(text) {
@@ -95,7 +209,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (messageMatch) {
                 const time = messageMatch[1];
                 const name = messageMatch[2].replace(':', '').trim();
-                const content = messageMatch[3].trim();
+                
+                // 複数行メッセージの引用符を削除（最初と最後の"を削除）
+                let content = messageMatch[3].trim();
+                if (content.startsWith('"') && content.endsWith('"') && content.length > 2) {
+                    content = content.substring(1, content.length - 1);
+                }
                 
                 currentMessage = {
                     type: 'message',
@@ -121,7 +240,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 前のメッセージの続きと判断（インデントや改行後のテキストなど）
             if (currentMessage) {
-                currentMessage.content += '\n' + line;
+                // 複数行メッセージの前後の引用符も削除
+                let lineContent = line;
+                if (i === lines.length - 1 && lineContent.endsWith('"')) {
+                    lineContent = lineContent.substring(0, lineContent.length - 1);
+                }
+                if (lineContent.startsWith('"') && i === i + 1) {
+                    lineContent = lineContent.substring(1);
+                }
+                
+                currentMessage.content += '\n' + lineContent;
                 currentMessage.isMultiLine = true;
             }
         }
@@ -171,6 +299,16 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         let colorIndex = 0;
         
+        // 自分のユーザー名リストを取得（カンマ区切りで複数可）
+        const myUsernames = myUsernameInput.value.split(',')
+            .map(name => name.trim())
+            .filter(name => name.length > 0);
+            
+        // デフォルトの「自分」判定用名前リスト
+        if (myUsernames.length === 0) {
+            myUsernames.push("あなた", "You", "(あなた)", "（あなた）");
+        }
+        
         messages.forEach((msg, index) => {
             if (msg.type === 'date') {
                 // 日付の表示
@@ -192,7 +330,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // メッセージの向きを決定（自分のメッセージは右側に）
-                const isMyMessage = msg.name === "あなた" || msg.name === "You" || msg.name.includes("（あなた）");
+                const isMyMessage = myUsernames.some(name => 
+                    msg.name === name || 
+                    msg.name.includes(name)
+                );
                 const messageClass = isMyMessage ? 'message right' : 'message left';
                 
                 // メッセージ要素の作成
