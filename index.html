@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Chat Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>LINE Chat Viewer</h1>
+            <p>LINEのトーク履歴テキストファイルをアップロードしてLINE風に表示します</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="file-upload">
+                <input type="file" id="file-input" accept=".txt" />
+                <label for="file-input" class="file-label">ファイルを選択</label>
+                <p id="file-name">ファイルが選択されていません</p>
+            </div>
+            <div class="options">
+                <div class="option">
+                    <label>
+                        <input type="checkbox" id="reverse-order" />
+                        新しいメッセージを下に表示
+                    </label>
+                </div>
+                <div class="option">
+                    <label for="date-format">日付フォーマット:</label>
+                    <select id="date-format">
+                        <option value="yyyy/MM/dd" selected>yyyy/MM/dd</option>
+                        <option value="yyyy年MM月dd日">yyyy年MM月dd日</option>
+                        <option value="MM/dd/yyyy">MM/dd/yyyy</option>
+                    </select>
+                </div>
+            </div>
+            <button id="load-button" disabled>読み込む</button>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>読み込み中...</p>
+        </div>
+
+        <div id="chat-container" class="hidden">
+            <div class="chat-header">
+                <button id="back-button">← 戻る</button>
+                <h2 id="chat-title">チャット履歴</h2>
+            </div>
+            <div id="chat-messages"></div>
+        </div>
+
+        <footer>
+            <p>※このアプリはクライアントサイドで動作します。あなたのデータが外部に送信されることはありません。</p>
+            <p><a href="https://github.com/Shou-Tucker/line-chat-viewer" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
