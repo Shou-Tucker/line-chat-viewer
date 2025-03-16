@@ -159,6 +159,18 @@ button:disabled {
     margin: 0 auto 15px;
 }
 
+.spinner-small {
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid #00b900;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -176,6 +188,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     height: 80vh;
+    position: relative;
 }
 
 .chat-header {
@@ -205,6 +218,9 @@ button:disabled {
     text-align: center;
     margin-right: 30px; /* バックボタンとのバランス */
     font-weight: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .settings-bar {
@@ -255,6 +271,7 @@ button:disabled {
 .avatar-item {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     margin-bottom: 12px;
     padding-bottom: 12px;
     border-bottom: 1px solid #eee;
@@ -276,27 +293,88 @@ button:disabled {
     font-weight: bold;
     color: white;
     flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.avatar-preview.with-image {
+    text-indent: -9999px;
 }
 
 .avatar-name {
     flex-grow: 1;
     margin-right: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .avatar-color-picker {
     display: flex;
     align-items: center;
+    margin: 5px 0;
 }
 
-.avatar-color-picker span {
+.avatar-upload-label {
+    background-color: #f2f2f2;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin: 0 5px;
     font-size: 12px;
-    margin-right: 5px;
+    cursor: pointer;
+}
+
+.avatar-remove-button {
+    background-color: #ff6b6b;
+    color: white;
+    margin-left: 5px;
+}
+
+.avatar-remove-button:hover {
+    background-color: #e84a4a;
+}
+
+.storage-info {
+    margin: 10px 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.storage-meter {
+    height: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    overflow: hidden;
+}
+
+.storage-used {
+    height: 100%;
+    background-color: #00b900;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.storage-used.storage-warning {
+    background-color: #ff6b6b;
 }
 
 #close-avatar-settings {
     display: block;
     width: 100%;
     margin-top: 15px;
+    background-color: #f2f2f2;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+#clear-avatars {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
     background-color: #f2f2f2;
     color: #333;
     border: 1px solid #ddd;
@@ -355,28 +433,27 @@ button:disabled {
     flex-direction: column;
 }
 
-/* ページネーションコントロール */
-.pagination-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
+.load-more-container {
+    text-align: center;
+    padding: 10px;
     background-color: #f8f8f8;
     border-top: 1px solid #e0e0e0;
-    flex-shrink: 0;
 }
 
-#prev-page, #next-page {
+#load-more-button {
     background-color: #f2f2f2;
     color: #333;
     border: 1px solid #ddd;
-    padding: 8px 15px;
+    padding: 8px 20px;
     font-size: 14px;
+    border-radius: 20px;
 }
 
-#page-info {
-    font-size: 14px;
+.scroll-loading {
+    padding: 10px;
+    text-align: center;
     color: #666;
+    font-size: 14px;
 }
 
 .message-date {
@@ -505,6 +582,13 @@ button:disabled {
     align-self: center;
 }
 
+.no-messages {
+    text-align: center;
+    padding: 30px;
+    color: #888;
+    font-size: 16px;
+}
+
 footer {
     text-align: center;
     margin-top: 30px;
@@ -523,6 +607,18 @@ footer a:hover {
     text-decoration: underline;
 }
 
+/* メモリ最適化のためのスタイル */
+/* レンダリングパフォーマンスを向上させるための設定 */
+#chat-messages {
+    will-change: transform; /* GPUアクセラレーションを有効に */
+    transform: translateZ(0); /* ハードウェアアクセラレーションを強制 */
+    backface-visibility: hidden; /* パフォーマンス向上 */
+}
+
+.message-content, .message-avatar {
+    will-change: transform; /* GPUアクセラレーションを有効に */
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
     .container {
@@ -535,7 +631,12 @@ footer a:hover {
     
     .options {
         flex-direction: column;
+        align-items: flex-start;
         gap: 10px;
+    }
+    
+    .option {
+        width: 100%;
     }
     
     .message {
@@ -552,7 +653,7 @@ footer a:hover {
 
     #search-input {
         width: 100%;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         margin-right: 0;
     }
 
@@ -570,7 +671,7 @@ footer a:hover {
     }
     
     #avatar-settings-panel {
-        width: 250px;
+        width: 280px;
         left: -100px;
     }
     
@@ -586,5 +687,77 @@ footer a:hover {
     
     .message.right .message-time {
         margin-right: 38px;
+    }
+    
+    .message-content {
+        max-width: calc(100vw - 120px);
+    }
+    
+    /* サイドバー表示を調整（モバイルでは全画面表示） */
+    #avatar-settings-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        z-index: 1000;
+        border-radius: 0;
+    }
+    
+    /* スクロールバーのスタイルを最適化 */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+}
+
+/* モバイル最適化のための追加スタイル */
+@media (max-width: 400px) {
+    .message-content {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+    
+    .message-avatar {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .message.left .message-time {
+        margin-left: 36px;
+    }
+    
+    .message.right .message-time {
+        margin-right: 36px;
+    }
+    
+    .message-name {
+        font-size: 11px;
+    }
+    
+    .message-time {
+        font-size: 10px;
+    }
+    
+    /* ボタンサイズの最適化 */
+    #search-button, #search-prev, #search-next {
+        width: 32px;
+        height: 32px;
+    }
+    
+    /* フォームフィールドの最適化 */
+    select, input[type="text"] {
+        font-size: 13px;
+        padding: 8px 12px;
     }
 }
