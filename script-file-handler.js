@@ -12,10 +12,15 @@ window.addEventListener('DOMContentLoaded', function() {
     const chatTitle = document.getElementById('chat-title');
     const dropArea = document.getElementById('drop-area');
 
+    // 初期化時に自動的にイベントリスナーを設定
+    setupEventListeners();
+    console.log('FileHandler: イベントリスナーを設定しました');
+
     // イベントリスナーの設定
     function setupEventListeners() {
         // ファイル選択
         fileInput.addEventListener('change', handleFileSelect);
+        console.log('FileHandler: ファイル選択イベントリスナーを設定しました');
         
         // ドラッグ＆ドロップ関連
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -31,22 +36,27 @@ window.addEventListener('DOMContentLoaded', function() {
         });
         
         dropArea.addEventListener('drop', handleDrop, false);
+        console.log('FileHandler: ドラッグ＆ドロップイベントリスナーを設定しました');
         
         // 読み込みボタン
         loadButton.addEventListener('click', loadFile);
+        console.log('FileHandler: 読み込みボタンイベントリスナーを設定しました');
     }
 
     // ドロップエリアハイライト
-    function highlight() {
+    function highlight(e) {
+        preventDefaults(e);
         dropArea.classList.add('highlight');
     }
 
-    function unhighlight() {
+    function unhighlight(e) {
+        preventDefaults(e);
         dropArea.classList.remove('highlight');
     }
 
     // ファイルドロップ処理
     function handleDrop(e) {
+        preventDefaults(e);
         const dt = e.dataTransfer;
         const files = dt.files;
         
@@ -66,19 +76,26 @@ window.addEventListener('DOMContentLoaded', function() {
 
     // ファイル選択時の処理
     function handleFileSelect() {
+        console.log('FileHandler: ファイルが選択されました');
         if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
             fileNameDisplay.textContent = file.name;
             loadButton.disabled = false;
+            console.log('FileHandler: ファイル名を表示しました:', file.name);
         } else {
             fileNameDisplay.textContent = 'ファイルが選択されていません';
             loadButton.disabled = true;
+            console.log('FileHandler: ファイルが選択されていません');
         }
     }
 
     // ファイルを読み込む
     function loadFile() {
-        if (fileInput.files.length === 0) return;
+        console.log('FileHandler: ファイル読み込み開始');
+        if (fileInput.files.length === 0) {
+            console.error('FileHandler: ファイルが選択されていません');
+            return;
+        }
         
         const file = fileInput.files[0];
         const reader = new FileReader();
@@ -87,21 +104,32 @@ window.addEventListener('DOMContentLoaded', function() {
         loadingDiv.classList.remove('hidden');
         loadButton.disabled = true;
         loadingStatus.textContent = 'ファイルを読み込んでいます...';
+        console.log('FileHandler: 読み込み表示を開始しました');
         
         reader.onload = function(e) {
             try {
+                console.log('FileHandler: ファイルの読み込みが完了しました');
                 const text = e.target.result;
                 
                 // ローメモリーモードの場合は、分割して処理
                 if (lowMemoryModeCheckbox.checked) {
+                    console.log('FileHandler: ローメモリーモードでパース開始');
                     parseInChunks(text);
                 } else {
                     // 通常モードの場合は、メインスレッドでパース
+                    console.log('FileHandler: 通常モードでパース開始');
+                    if (!window.parserManager) {
+                        console.error('FileHandler: parserManager が見つかりません');
+                        alert('Parser モジュールが読み込まれていません。ページを再読み込みしてください。');
+                        loadingDiv.classList.add('hidden');
+                        loadButton.disabled = false;
+                        return;
+                    }
                     window.lineViewer.rawMessages = window.parserManager.parseLINEChat(text);
                     finishLoading();
                 }
             } catch (error) {
-                console.error('エラーが発生しました:', error);
+                console.error('FileHandler: エラーが発生しました:', error);
                 alert('ファイルの処理中にエラーが発生しました: ' + error.message);
                 loadingDiv.classList.add('hidden');
                 loadButton.disabled = false;
@@ -109,11 +137,13 @@ window.addEventListener('DOMContentLoaded', function() {
         };
         
         reader.onerror = function() {
+            console.error('FileHandler: ファイル読み込みエラー');
             alert('ファイルの読み込み中にエラーが発生しました。');
             loadingDiv.classList.add('hidden');
             loadButton.disabled = false;
         };
         
+        console.log('FileHandler: ファイル読み込み開始 -', file.name);
         reader.readAsText(file, 'utf-8');
     }
 
@@ -160,10 +190,12 @@ window.addEventListener('DOMContentLoaded', function() {
 
     // 読み込み完了後の処理
     function finishLoading() {
+        console.log('FileHandler: 読み込み完了');
         loadingStatus.textContent = 'メッセージを表示しています...';
         
         // メッセージの表示順を設定
         if (reverseOrderCheckbox.checked) {
+            console.log('FileHandler: メッセージを逆順に設定');
             window.lineViewer.rawMessages.reverse();
         }
         
@@ -174,22 +206,41 @@ window.addEventListener('DOMContentLoaded', function() {
         });
         
         // ユーザー別のアバター設定を更新
-        window.avatarManager.updateAvatarSettings();
+        if (window.avatarManager) {
+            window.avatarManager.updateAvatarSettings();
+        } else {
+            console.error('FileHandler: avatarManager が見つかりません');
+        }
         
         // 最初のチャンクを表示
-        window.coreManager.resetDisplay();
-        window.coreManager.loadInitialMessages();
+        if (window.coreManager) {
+            window.coreManager.resetDisplay();
+            window.coreManager.loadInitialMessages();
+        } else {
+            console.error('FileHandler: coreManager が見つかりません');
+            alert('Core モジュールが読み込まれていません。ページを再読み込みしてください。');
+            loadingDiv.classList.add('hidden');
+            loadButton.disabled = false;
+            return;
+        }
         
         // UI表示の更新
         chatContainer.classList.remove('hidden');
         loadingDiv.classList.add('hidden');
         chatTitle.textContent = fileInput.files[0].name.replace('.txt', '');
+        console.log('FileHandler: UIを更新しました');
     }
 
     // グローバルに公開する関数
     window.fileHandler = {
         setupEventListeners,
         handleFileSelect,
-        loadFile
+        loadFile,
+        handleDrop,
+        highlight,
+        unhighlight,
+        preventDefaults
     };
+    
+    console.log('FileHandler: モジュールの初期化が完了しました');
 });
