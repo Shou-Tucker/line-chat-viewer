@@ -7,6 +7,7 @@ window.addEventListener('DOMContentLoaded', function() {
     const searchNextButton = document.getElementById('search-next');
     const searchStats = document.getElementById('search-stats');
     const searchInfoText = document.getElementById('search-info-text');
+    const chatMessages = document.getElementById('chat-messages');
 
     // イベントリスナーの設定
     setupEventListeners();
@@ -154,7 +155,6 @@ window.addEventListener('DOMContentLoaded', function() {
         if (visibleCount === totalCount) {
             searchStats.textContent = `${visibleCount}/${totalCount} 件`;
             searchInfoText.textContent = '';
-            searchInfoText.classList.add('hidden');
         } else {
             // 表示件数と全件数が異なる場合は、それを表示
             searchStats.textContent = `${visibleCount}/${totalCount} 件`;
@@ -348,7 +348,7 @@ window.addEventListener('DOMContentLoaded', function() {
             }, 100);
         }
     }
-    
+
     // メッセージが現在表示範囲内にあるかチェック
     function isMessageVisible(globalIndex) {
         const visibleStartIndex = window.lineViewer.currentStartIndex - window.lineViewer.visibleMessages.length;
@@ -356,7 +356,7 @@ window.addEventListener('DOMContentLoaded', function() {
         
         return globalIndex >= visibleStartIndex && globalIndex < visibleEndIndex;
     }
-    
+
     // 現在の検索結果ハイライトをクリア
     function clearCurrentResultHighlight() {
         const currentHighlighted = document.querySelector('.current-search-result');
@@ -364,7 +364,7 @@ window.addEventListener('DOMContentLoaded', function() {
             currentHighlighted.classList.remove('current-search-result');
         }
     }
-    
+
     // 現在の検索結果をハイライト
     function highlightCurrentResult() {
         if (window.lineViewer.currentSearchIndex >= 0 && 
@@ -374,7 +374,7 @@ window.addEventListener('DOMContentLoaded', function() {
             currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
-    
+
     // 検索状態をクリア
     function clearSearch() {
         // ハイライトを解除
@@ -406,11 +406,12 @@ window.addEventListener('DOMContentLoaded', function() {
         searchNextButton.classList.remove('has-hidden-results');
     }
 
-    // 検索関連の関数をグローバルに公開
+    // グローバル公開
     window.searchManager = {
         performSearch,
-        updateSearchInfo,
         clearSearch,
-        scrollToMessageByIndex
+        updateSearchInfo,
+        scrollToMessageByIndex,
+        highlightCurrentResult
     };
 });
