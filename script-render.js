@@ -1,35 +1,11 @@
 // メッセージレンダリング関連の機能
-
-// グローバル変数が初期化されるまで待機
 window.addEventListener('DOMContentLoaded', function() {
     // ページ要素
     const chatMessages = document.getElementById('chat-messages');
     const reverseOrderCheckbox = document.getElementById('reverse-order');
     const myUsernameInput = document.getElementById('my-username');
     
-    // レンダラーのグローバル公開
-    window.messageRenderer = {
-        renderMessages,
-        renderVisibleMessages
-    };
-    
-    // ユーザー名から色を取得
-    function getUserColor(username) {
-        if (!window.lineViewer.userSettings.colors[username]) {
-            window.lineViewer.userSettings.colors[username] = window.lineViewer.colorPool[window.lineViewer.colorIndex % window.lineViewer.colorPool.length];
-            window.lineViewer.colorIndex++;
-            // 設定を保存
-            window.avatarManager.saveUserSettings();
-        }
-        return window.lineViewer.userSettings.colors[username];
-    }
-    
-    // ユーザー名からアバターイニシャルを取得
-    function getUserInitial(username) {
-        return username.charAt(0);
-    }
-    
-    // メッセージを表示する関数
+    // メッセージをレンダリングする関数
     function renderMessages(messages, replace = false) {
         if (replace) {
             chatMessages.innerHTML = '';
@@ -52,12 +28,14 @@ window.addEventListener('DOMContentLoaded', function() {
                 const dateDiv = document.createElement('div');
                 dateDiv.className = 'message-date';
                 dateDiv.textContent = msg.date;
+                dateDiv.setAttribute('data-id', msg.id);
                 fragment.appendChild(dateDiv);
             } else if (msg.type === 'system') {
                 // システムメッセージの表示
                 const systemDiv = document.createElement('div');
                 systemDiv.className = 'system-message';
                 systemDiv.textContent = `${msg.time} ${msg.content}`;
+                systemDiv.setAttribute('data-id', msg.id);
                 fragment.appendChild(systemDiv);
             } else if (msg.type === 'message') {
                 // メッセージの向きを決定（自分のメッセージは右側に）
@@ -70,6 +48,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 // メッセージ要素の作成
                 const messageDiv = document.createElement('div');
                 messageDiv.className = messageClass;
+                messageDiv.setAttribute('data-id', msg.id);
                 
                 // ユーザー名の色とイニシャル
                 const userColor = getUserColor(msg.name);
@@ -123,6 +102,9 @@ window.addEventListener('DOMContentLoaded', function() {
                 timeDiv.textContent = msg.time;
                 messageDiv.appendChild(timeDiv);
                 
+                // メッセージIDとDOMノードの関連付け
+                window.lineViewer.messageIndexMap.set(msg.id, messageDiv);
+                
                 fragment.appendChild(messageDiv);
             }
         });
@@ -141,4 +123,26 @@ window.addEventListener('DOMContentLoaded', function() {
     function renderVisibleMessages() {
         renderMessages(window.lineViewer.visibleMessages, true);
     }
+    
+    // ユーザー名から色を取得
+    function getUserColor(username) {
+        if (!window.lineViewer.userSettings.colors[username]) {
+            window.lineViewer.userSettings.colors[username] = window.lineViewer.colorPool[window.lineViewer.colorIndex % window.lineViewer.colorPool.length];
+            window.lineViewer.colorIndex++;
+            // 設定を保存
+            window.avatarManager.saveUserSettings();
+        }
+        return window.lineViewer.userSettings.colors[username];
+    }
+    
+    // ユーザー名からアバターイニシャルを取得
+    function getUserInitial(username) {
+        return username.charAt(0);
+    }
+    
+    // レンダラーのグローバル公開
+    window.messageRenderer = {
+        renderMessages,
+        renderVisibleMessages
+    };
 });
