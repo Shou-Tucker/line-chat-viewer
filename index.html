@@ -6,14 +6,21 @@
     <title>LINE Chat Viewer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <!-- 共通スクリプト -->
+    <!-- スクリプトの読み込み順序は依存関係に基づいています -->
+    <!-- 1. 基本的なユーティリティとパーサー -->
     <script src="script-parser.js"></script>
+    <!-- 2. アバターとレンダリング -->
     <script src="script-avatar.js"></script>
     <script src="script-render.js"></script>
-    <script src="script-file-handler.js"></script>
+    <!-- 3. UI操作と検索 -->
     <script src="script-ui-manager.js"></script>
     <script src="script-search.js"></script>
+    <!-- 4. ファイル処理 -->
+    <script src="script-file-handler.js"></script>
+    <!-- 5. コア (他のすべてに依存) -->
     <script src="script-core.js"></script>
+    <!-- 6. レガシーサポート (デバッグ用) -->
+    <script src="script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -108,6 +115,7 @@
                 <button id="search-prev" title="前の結果" disabled><span>↑</span></button>
                 <button id="search-next" title="次の結果" disabled><span>↓</span></button>
                 <span id="search-stats"></span>
+                <span id="search-info-text"></span>
             </div>
             
             <div id="chat-messages"></div>
