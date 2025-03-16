@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         lastSearchQuery: '', // 最後の検索クエリ
         isLoading: false, // 読み込み中フラグ
         hasReachedEnd: false, // 全てのメッセージを表示したかどうか
+        messageIndexMap: new Map(), // メッセージIDとインデックスのマッピング
         userSettings: {
             colors: {}, // ユーザー名と色のマッピング
             avatarUrls: {} // ユーザー名とアバター画像URLのマッピング
@@ -98,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.lineViewer.currentStartIndex = 0;
         window.lineViewer.visibleMessages = [];
         window.lineViewer.hasReachedEnd = false;
+        window.lineViewer.messageIndexMap.clear(); // messageIndexMapをクリア
         
         if (window.searchManager) {
             window.searchManager.clearSearch();
