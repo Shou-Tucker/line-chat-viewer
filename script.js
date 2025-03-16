@@ -5,8 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadButton = document.getElementById('load-button');
     const reverseOrderCheckbox = document.getElementById('reverse-order');
     const dateFormatSelect = document.getElementById('date-format');
-    const myUsernameInput = document.getElementById('my-username');
-    const applyUsernameButton = document.getElementById('apply-username');
+    const usernameOptions = document.getElementById('username-options');
     const loadingDiv = document.getElementById('loading');
     const chatContainer = document.getElementById('chat-container');
     const chatMessages = document.getElementById('chat-messages');
@@ -21,6 +20,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 現在のメッセージリスト（ユーザー名変更時に再レンダリングするため）
     let currentMessages = [];
+    
+    // 選択されたユーザー（自分）の名前
+    let selectedUserName = null;
+
+    // ユーザー名と色のマッピング
+    const userColors = {};
+    const colorPool = [
+        '#FF6B6B', '#4ECDC4', '#FFD166', '#87BCDE', '#C38D9E',
+        '#E27D60', '#85CDCA', '#E8A87C', '#C1C8E4', '#8860D0'
+    ];
+    let colorIndex = 0;
 
     // 検索関連の変数
     let searchResults = [];
@@ -94,6 +104,11 @@ document.addEventListener('DOMContentLoaded', function() {
         reader.onload = function(e) {
             const text = e.target.result;
             currentMessages = parseLINEChat(text);
+            
+            // ユーザー名の抽出
+            const usernames = extractUsernames(currentMessages);
+            createUsernameOptions(usernames);
+            
             renderMessages(currentMessages);
             loadingDiv.classList.add('hidden');
             chatContainer.classList.remove('hidden');
@@ -109,6 +124,70 @@ document.addEventListener('DOMContentLoaded', function() {
         reader.readAsText(file, 'utf-8');
     });
 
+    // メッセージからユーザー名を抽出
+    function extractUsernames(messages) {
+        const usernameSet = new Set();
+        
+        // デフォルトのユーザー名を追加
+        const defaultNames = ["あなた", "You", "(あなた)", "（あなた）"];
+        defaultNames.forEach(name => usernameSet.add(name));
+        
+        // メッセージからユーザー名を追加
+        messages.forEach(msg => {
+            if (msg.type === 'message' && msg.name) {
+                usernameSet.add(msg.name);
+            }
+        });
+        
+        return Array.from(usernameSet);
+    }
+    
+    // ユーザー名選択ラジオボタンの作成
+    function createUsernameOptions(usernames) {
+        usernameOptions.innerHTML = '';
+        
+        usernames.forEach((username, index) => {
+            const isDefault = ["あなた", "You", "(あなた)", "（あなた）"].includes(username);
+            
+            const radioOption = document.createElement('div');
+            radioOption.className = 'radio-option' + (isDefault ? ' selected' : '');
+            radioOption.dataset.username = username;
+            
+            // アバターの最初の文字を取得（日本語の場合も1文字）
+            const initial = username.charAt(0);
+            
+            radioOption.innerHTML = `
+                <input type="radio" name="username" id="username-${index}" value="${username}" ${isDefault ? 'checked' : ''}>
+                <label for="username-${index}">${username}</label>
+            `;
+            
+            radioOption.addEventListener('click', function() {
+                // 選択状態の更新
+                document.querySelectorAll('.radio-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                // ラジオボタンを選択状態に
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                // 選択されたユーザー名を保存
+                selectedUserName = username;
+                
+                // メッセージの再レンダリング
+                renderMessages(currentMessages);
+            });
+            
+            usernameOptions.appendChild(radioOption);
+            
+            // デフォルトで最初のデフォルトユーザー名を選択
+            if (isDefault && selectedUserName === null) {
+                selectedUserName = username;
+            }
+        });
+    }
+
     // 「戻る」ボタンのクリック時の処理
     backButton.addEventListener('click', function() {
         chatContainer.classList.add('hidden');
@@ -116,15 +195,10 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.innerHTML = '';
         // 検索状態をリセット
         clearSearch();
-        // 現在のメッセージリストをクリア
+        // 現在のメッセージリストとユーザー名選択をクリア
         currentMessages = [];
-    });
-
-    // ユーザー名適用ボタンのクリック時の処理
-    applyUsernameButton.addEventListener('click', function() {
-        if (currentMessages.length > 0) {
-            renderMessages(currentMessages);
-        }
+        selectedUserName = null;
+        usernameOptions.innerHTML = '';
     });
 
     // 検索関連のイベント
@@ -381,27 +455,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ユーザー名から色を取得
+    function getUserColor(username) {
+        if (!userColors[username]) {
+            userColors[username] = colorPool[colorIndex % colorPool.length];
+            colorIndex++;
+        }
+        return userColors[username];
+    }
+    
+    // ユーザー名からアバターイニシャルを取得
+    function getUserInitial(username) {
+        return username.charAt(0);
+    }
+
     // メッセージを表示する関数
     function renderMessages(messages) {
         chatMessages.innerHTML = '';
         const fragment = document.createDocumentFragment();
         
         // ユーザー名と色のマッピング
-        const userColors = {};
-        const colorPool = [
-            '#FF6B6B', '#4ECDC4', '#FFD166', '#87BCDE', '#C38D9E',
-            '#E27D60', '#85CDCA', '#E8A87C', '#C1C8E4', '#8860D0'
-        ];
-        let colorIndex = 0;
+        userColors = {};
+        colorIndex = 0;
         
-        // 自分のユーザー名リストを取得（カンマ区切りで複数可）
-        const myUsernames = myUsernameInput.value.split(',')
-            .map(name => name.trim())
-            .filter(name => name.length > 0);
-            
         // デフォルトの「自分」判定用名前リスト
         const defaultUsernames = ["あなた", "You", "(あなた)", "（あなた）"];
-        const myUsernameList = myUsernames.length > 0 ? myUsernames : defaultUsernames;
+        const myUsernameList = selectedUserName ? [selectedUserName] : defaultUsernames;
         
         messages.forEach((msg, index) => {
             if (msg.type === 'date') {
@@ -417,12 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 systemDiv.textContent = `${msg.time} ${msg.content}`;
                 fragment.appendChild(systemDiv);
             } else if (msg.type === 'message') {
-                // ユーザー名に色を割り当て
-                if (!userColors[msg.name]) {
-                    userColors[msg.name] = colorPool[colorIndex % colorPool.length];
-                    colorIndex++;
-                }
-                
                 // メッセージの向きを決定（自分のメッセージは右側に）
                 const isMyMessage = myUsernameList.some(name => 
                     msg.name === name || 
@@ -434,18 +507,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = messageClass;
                 
+                // ユーザー名の色とイニシャル
+                const userColor = getUserColor(msg.name);
+                const userInitial = getUserInitial(msg.name);
+                
                 // 名前の表示（自分以外）
                 if (!isMyMessage) {
                     const nameDiv = document.createElement('div');
                     nameDiv.className = 'message-name';
                     nameDiv.textContent = msg.name;
-                    nameDiv.style.color = userColors[msg.name];
+                    nameDiv.style.color = userColor;
                     messageDiv.appendChild(nameDiv);
                 }
                 
                 // メッセージコンテナ（吹き出し部分）
                 const containerDiv = document.createElement('div');
                 containerDiv.className = 'message-container';
+                
+                // アバター表示
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'message-avatar';
+                avatarDiv.style.backgroundColor = userColor;
+                avatarDiv.textContent = userInitial;
+                containerDiv.appendChild(avatarDiv);
                 
                 // メッセージ内容
                 const contentDiv = document.createElement('div');
