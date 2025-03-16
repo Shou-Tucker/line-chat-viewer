@@ -79,13 +79,22 @@ header h1 {
     align-items: center;
 }
 
-select, button {
+.option .hint {
+    font-size: 12px;
+    color: #888;
+    margin-left: 5px;
+}
+
+select, button, input[type="text"] {
     padding: 10px 15px;
     border-radius: 5px;
     border: 1px solid #ddd;
     background-color: white;
-    cursor: pointer;
     font-size: 14px;
+}
+
+input[type="text"] {
+    width: 150px;
 }
 
 button {
@@ -95,6 +104,7 @@ button {
     padding: 12px 25px;
     font-size: 16px;
     transition: background-color 0.3s;
+    cursor: pointer;
 }
 
 button:hover:not(:disabled) {
@@ -162,6 +172,49 @@ button:disabled {
     margin-right: 30px; /* バックボタンとのバランス */
 }
 
+.search-container {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#search-input {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+#search-prev, #search-next {
+    background-color: #f2f2f2;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+    font-size: 18px;
+    padding: 0;
+}
+
+#search-prev:hover, #search-next:hover {
+    background-color: #e0e0e0;
+}
+
+#search-stats {
+    font-size: 12px;
+    color: #666;
+    min-width: 80px;
+    text-align: center;
+}
+
 #chat-messages {
     padding: 15px;
     overflow-y: auto;
@@ -225,6 +278,15 @@ button:disabled {
     color: black;
 }
 
+.highlight {
+    background-color: #FFFF00;
+    color: #000000;
+}
+
+.message.current-search-result .message-content {
+    border: 2px solid #FF6B6B;
+}
+
 .system-message {
     text-align: center;
     margin: 10px 0;
@@ -271,5 +333,19 @@ footer a:hover {
     
     #chat-messages {
         max-height: 80vh;
+    }
+
+    .search-container {
+        flex-wrap: wrap;
+    }
+
+    #search-input {
+        width: 100%;
+        margin-bottom: 10px;
+        margin-right: 0;
+    }
+
+    #search-stats {
+        margin-left: auto;
     }
 }
