@@ -100,7 +100,7 @@ header h1 {
     margin-left: 5px;
 }
 
-select, button, input[type="text"] {
+select, button, input[type="text"], input[type="color"] {
     padding: 10px 15px;
     border-radius: 5px;
     border: 1px solid #ddd;
@@ -110,6 +110,13 @@ select, button, input[type="text"] {
 
 input[type="text"] {
     width: 150px;
+}
+
+input[type="color"] {
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    cursor: pointer;
 }
 
 button {
@@ -204,48 +211,95 @@ button:disabled {
     background-color: #f8f8f8;
     padding: 12px 15px;
     border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
     flex-shrink: 0;
 }
 
-.username-selector {
-    display: flex;
-    flex-direction: column;
+/* アバター設定パネル */
+.avatar-settings {
+    position: relative;
 }
 
-.username-selector p {
-    margin-bottom: 8px;
+#avatar-settings-toggle {
+    background-color: #f2f2f2;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+#avatar-settings-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 300px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    z-index: 100;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#avatar-settings-panel h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
     font-weight: 600;
     color: #333;
+    text-align: center;
 }
 
-.radio-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.radio-option {
+.avatar-item {
     display: flex;
     align-items: center;
-    margin-right: 15px;
-    padding: 6px 10px;
-    background-color: #f2f2f2;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.2s;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
 }
 
-.radio-option:hover {
-    background-color: #e8e8e8;
+.avatar-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
-.radio-option.selected {
-    background-color: rgba(0, 185, 0, 0.1);
-    border: 1px solid #00b900;
+.avatar-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
 }
 
-.radio-option input {
+.avatar-name {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.avatar-color-picker {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-color-picker span {
+    font-size: 12px;
     margin-right: 5px;
+}
+
+#close-avatar-settings {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    background-color: #f2f2f2;
+    color: #333;
+    border: 1px solid #ddd;
 }
 
 .search-container {
@@ -301,6 +355,30 @@ button:disabled {
     flex-direction: column;
 }
 
+/* ページネーションコントロール */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #f8f8f8;
+    border-top: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+#prev-page, #next-page {
+    background-color: #f2f2f2;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 8px 15px;
+    font-size: 14px;
+}
+
+#page-info {
+    font-size: 14px;
+    color: #666;
+}
+
 .message-date {
     text-align: center;
     margin: 15px 0 10px;
@@ -342,6 +420,15 @@ button:disabled {
     font-weight: bold;
     color: white;
     flex-shrink: 0;
+    /* 画像がある場合のスタイル */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.message-avatar.with-image {
+    /* 画像がある場合はテキストを非表示 */
+    text-indent: -9999px;
 }
 
 .message-content {
@@ -473,13 +560,18 @@ footer a:hover {
         margin-left: auto;
     }
     
-    .radio-group {
-        flex-direction: column;
-        gap: 8px;
+    .avatar-item {
+        flex-wrap: wrap;
     }
     
-    .radio-option {
-        margin-right: 0;
+    .avatar-name {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    #avatar-settings-panel {
+        width: 250px;
+        left: -100px;
     }
     
     .message-avatar {
