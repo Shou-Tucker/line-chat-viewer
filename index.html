@@ -44,13 +44,19 @@
                     <span class="hint">カンマ区切りで複数入力可</span>
                 </div>
                 <div class="option">
-                    <label for="page-size">ページサイズ:</label>
-                    <select id="page-size">
+                    <label for="chunk-size">表示件数:</label>
+                    <select id="chunk-size">
                         <option value="50">50 メッセージ</option>
                         <option value="100" selected>100 メッセージ</option>
-                        <option value="200">200 メッセージ</option>
-                        <option value="500">500 メッセージ</option>
+                        <option value="200">200 メッセージ (大きい端末向け)</option>
                     </select>
+                </div>
+                <div class="option">
+                    <label>
+                        <input type="checkbox" id="low-memory-mode" checked />
+                        メモリ節約モード
+                    </label>
+                    <span class="hint">スマホに最適化</span>
                 </div>
             </div>
             <button id="load-button" disabled>読み込む</button>
@@ -76,6 +82,13 @@
                         <div id="avatar-list">
                             <!-- ここに動的にユーザーアバター設定が追加されます -->
                         </div>
+                        <div class="storage-info">
+                            <div class="storage-meter">
+                                <div id="storage-used" class="storage-used"></div>
+                            </div>
+                            <span id="storage-text">ストレージ使用量: 0%</span>
+                        </div>
+                        <button id="clear-avatars" class="small-button">アイコンをリセット</button>
                         <button id="close-avatar-settings">閉じる</button>
                     </div>
                 </div>
@@ -91,10 +104,12 @@
             
             <div id="chat-messages"></div>
             
-            <div class="pagination-controls">
-                <button id="prev-page" disabled>前のページ</button>
-                <span id="page-info">ページ 1 / 1</span>
-                <button id="next-page" disabled>次のページ</button>
+            <div class="load-more-container">
+                <button id="load-more-button" class="hidden">さらに読み込む</button>
+                <div id="scroll-loading" class="scroll-loading hidden">
+                    <div class="spinner-small"></div>
+                    <span>読み込み中...</span>
+                </div>
             </div>
         </div>
 
@@ -105,6 +120,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script src="script-render.js"></script>
 </body>
 </html>
