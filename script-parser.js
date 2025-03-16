@@ -1,47 +1,17 @@
-// LINE記録をパースするモジュール
+// メッセージパース関連のモジュール
 window.addEventListener('DOMContentLoaded', function() {
-    const loadingStatus = document.getElementById('loading-status');
+    // 日付フォーマットセレクタ
     const dateFormatSelect = document.getElementById('date-format');
 
-    // テキストを分割して処理（メモリ使用量削減のため）
-    function parseInChunks(text, completionCallback) {
-        // テキストを行ごとに分割
+    // LINE履歴をパースして構造化する関数
+    function parseLINEChat(text) {
+        // 必要に応じて文字コード修正
+        text = fixTextEncoding(text);
+        
+        // 改行で分割して行ごとに処理
         const lines = text.split(/\r?\n/);
-        const totalLines = lines.length;
         
-        // 読み込み状況の更新
-        loadingStatus.textContent = `パース中... (0/${totalLines} 行)`;
-        
-        // 1チャンクあたりの行数
-        const chunkSize = 1000;
-        let processedLines = 0;
-        window.lineViewer.rawMessages = [];
-        
-        // Web Worker を使用せず、setTimeout で非同期処理
-        processNextChunk();
-        
-        function processNextChunk() {
-            // 処理するチャンクの範囲を決定
-            const endIndex = Math.min(processedLines + chunkSize, totalLines);
-            const chunk = lines.slice(processedLines, endIndex);
-            
-            // このチャンクを処理
-            const parsedChunk = parseChunk(chunk, processedLines > 0);
-            window.lineViewer.rawMessages = window.lineViewer.rawMessages.concat(parsedChunk);
-            
-            // 進捗状況の更新
-            processedLines = endIndex;
-            const percentage = Math.round((processedLines / totalLines) * 100);
-            loadingStatus.textContent = `パース中... (${processedLines}/${totalLines} 行, ${percentage}%)`;
-            
-            // 次のチャンクがあればそれを処理、なければ完了
-            if (processedLines < totalLines) {
-                setTimeout(processNextChunk, 0); // 次のチャンクを非同期で処理
-            } else {
-                // 全チャンクの処理が完了
-                completionCallback();
-            }
-        }
+        return parseChunk(lines, false);
     }
 
     // 一連のテキスト行をパースする
@@ -62,8 +32,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 currentDate = formatDate(dateMatch[1]);
                 messages.push({
                     type: 'date',
-                    date: currentDate,
-                    id: `date-${messages.length}` // ユニークなID
+                    date: currentDate
                 });
                 continue;
             }
@@ -82,8 +51,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     time: time,
                     name: name,
                     content: content,
-                    isMultiLine: false,
-                    id: `msg-${messages.length}` // ユニークなID
+                    isMultiLine: false
                 };
                 messages.push(currentMessage);
                 continue;
@@ -95,8 +63,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 messages.push({
                     type: 'system',
                     time: systemMessageMatch[1],
-                    content: systemMessageMatch[2],
-                    id: `sys-${messages.length}` // ユニークなID
+                    content: systemMessageMatch[2]
                 });
                 continue;
             }
@@ -143,17 +110,6 @@ window.addEventListener('DOMContentLoaded', function() {
         return messages;
     }
 
-    // LINE履歴をパースして構造化する関数
-    function parseLINEChat(text) {
-        // 必要に応じて文字コード修正
-        text = fixTextEncoding(text);
-        
-        // 改行で分割して行ごとに処理
-        const lines = text.split(/\r?\n/);
-        
-        return parseChunk(lines, false);
-    }
-
     // 文字化けの修正関数
     function fixTextEncoding(text) {
         // 特定の文字化けパターンの修正
@@ -194,10 +150,10 @@ window.addEventListener('DOMContentLoaded', function() {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // パース関連の関数をグローバルに公開
+    // グローバルに公開
     window.parserManager = {
-        parseInChunks,
         parseLINEChat,
+        parseChunk,
         fixTextEncoding,
         formatDate,
         escapeRegExp
