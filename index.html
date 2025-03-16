@@ -35,6 +35,11 @@
                         <option value="MM/dd/yyyy">MM/dd/yyyy</option>
                     </select>
                 </div>
+                <div class="option">
+                    <label for="my-username">自分のユーザー名:</label>
+                    <input type="text" id="my-username" placeholder="あなた" />
+                    <span class="hint">カンマ区切りで複数入力可</span>
+                </div>
             </div>
             <button id="load-button" disabled>読み込む</button>
         </div>
@@ -49,6 +54,14 @@
                 <button id="back-button">← 戻る</button>
                 <h2 id="chat-title">チャット履歴</h2>
             </div>
+            
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="メッセージを検索..." />
+                <button id="search-prev" title="前の結果"><span>↑</span></button>
+                <button id="search-next" title="次の結果"><span>↓</span></button>
+                <span id="search-stats"></span>
+            </div>
+            
             <div id="chat-messages"></div>
         </div>
 
