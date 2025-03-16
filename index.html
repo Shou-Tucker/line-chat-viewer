@@ -16,8 +16,11 @@
 
         <div class="upload-section">
             <div class="file-upload">
-                <input type="file" id="file-input" accept=".txt" />
-                <label for="file-input" class="file-label">ファイルを選択</label>
+                <div id="drop-area">
+                    <input type="file" id="file-input" accept=".txt" />
+                    <label for="file-input" class="file-label">ファイルを選択</label>
+                    <p>または、ファイルをここにドロップ</p>
+                </div>
                 <p id="file-name">ファイルが選択されていません</p>
             </div>
             <div class="options">
@@ -35,11 +38,6 @@
                         <option value="MM/dd/yyyy">MM/dd/yyyy</option>
                     </select>
                 </div>
-                <div class="option">
-                    <label for="my-username">自分のユーザー名:</label>
-                    <input type="text" id="my-username" placeholder="あなた" />
-                    <span class="hint">カンマ区切りで複数入力可</span>
-                </div>
             </div>
             <button id="load-button" disabled>読み込む</button>
         </div>
@@ -55,10 +53,20 @@
                 <h2 id="chat-title">チャット履歴</h2>
             </div>
             
+            <div class="settings-bar">
+                <div class="username-selector">
+                    <label for="my-username">自分のユーザー名:</label>
+                    <input type="text" id="my-username" placeholder="あなた" />
+                    <span class="hint">カンマ区切りで複数入力可</span>
+                    <button id="apply-username" class="small-button">適用</button>
+                </div>
+            </div>
+            
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="メッセージを検索..." />
-                <button id="search-prev" title="前の結果"><span>↑</span></button>
-                <button id="search-next" title="次の結果"><span>↓</span></button>
+                <button id="search-button" title="検索"><span>🔍</span></button>
+                <button id="search-prev" title="前の結果" disabled><span>↑</span></button>
+                <button id="search-next" title="次の結果" disabled><span>↓</span></button>
                 <span id="search-stats"></span>
             </div>
             
