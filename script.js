@@ -6,31 +6,79 @@ document.addEventListener('DOMContentLoaded', function() {
     const reverseOrderCheckbox = document.getElementById('reverse-order');
     const dateFormatSelect = document.getElementById('date-format');
     const myUsernameInput = document.getElementById('my-username');
+    const applyUsernameButton = document.getElementById('apply-username');
     const loadingDiv = document.getElementById('loading');
     const chatContainer = document.getElementById('chat-container');
     const chatMessages = document.getElementById('chat-messages');
     const backButton = document.getElementById('back-button');
     const chatTitle = document.getElementById('chat-title');
     const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
     const searchPrevButton = document.getElementById('search-prev');
     const searchNextButton = document.getElementById('search-next');
     const searchStats = document.getElementById('search-stats');
+    const dropArea = document.getElementById('drop-area');
+
+    // 現在のメッセージリスト（ユーザー名変更時に再レンダリングするため）
+    let currentMessages = [];
 
     // 検索関連の変数
     let searchResults = [];
     let currentSearchIndex = -1;
 
+    // ドラッグアンドドロップ関連の処理
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        dropArea.classList.add('highlight');
+    }
+
+    function unhighlight() {
+        dropArea.classList.remove('highlight');
+    }
+
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0 && files[0].type === 'text/plain' || files[0].name.endsWith('.txt')) {
+            fileInput.files = files;
+            handleFileSelect();
+        } else {
+            alert('テキストファイル(.txt)を選択してください');
+        }
+    }
+
     // ファイル選択時の処理
-    fileInput.addEventListener('change', function(e) {
-        if (this.files.length > 0) {
-            const file = this.files[0];
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
             fileNameDisplay.textContent = file.name;
             loadButton.disabled = false;
         } else {
             fileNameDisplay.textContent = 'ファイルが選択されていません';
             loadButton.disabled = true;
         }
-    });
+    }
 
     // 「読み込む」ボタンのクリック時の処理
     loadButton.addEventListener('click', function() {
@@ -45,7 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         reader.onload = function(e) {
             const text = e.target.result;
-            processLINEChat(text);
+            currentMessages = parseLINEChat(text);
+            renderMessages(currentMessages);
             loadingDiv.classList.add('hidden');
             chatContainer.classList.remove('hidden');
             chatTitle.textContent = file.name.replace('.txt', '');
@@ -67,11 +116,26 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.innerHTML = '';
         // 検索状態をリセット
         clearSearch();
+        // 現在のメッセージリストをクリア
+        currentMessages = [];
+    });
+
+    // ユーザー名適用ボタンのクリック時の処理
+    applyUsernameButton.addEventListener('click', function() {
+        if (currentMessages.length > 0) {
+            renderMessages(currentMessages);
+        }
     });
 
     // 検索関連のイベント
-    searchInput.addEventListener('input', function() {
-        performSearch(this.value);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            performSearch(this.value);
+        }
+    });
+
+    searchButton.addEventListener('click', function() {
+        performSearch(searchInput.value);
     });
 
     searchPrevButton.addEventListener('click', function() {
@@ -112,8 +176,14 @@ document.addEventListener('DOMContentLoaded', function() {
             currentSearchIndex = 0;
             highlightCurrentResult();
             updateSearchStats();
+            // 検索ナビゲーションボタンを有効化
+            searchPrevButton.disabled = false;
+            searchNextButton.disabled = false;
         } else {
             searchStats.textContent = '0 件';
+            // 検索ナビゲーションボタンを無効化
+            searchPrevButton.disabled = true;
+            searchNextButton.disabled = true;
         }
     }
     
@@ -165,6 +235,10 @@ document.addEventListener('DOMContentLoaded', function() {
         searchResults = [];
         currentSearchIndex = -1;
         searchStats.textContent = '';
+        
+        // ナビゲーションボタンを無効化
+        searchPrevButton.disabled = true;
+        searchNextButton.disabled = true;
     }
     
     // 正規表現用エスケープ関数
@@ -172,13 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // LINE履歴のパース・表示処理
-    function processLINEChat(text) {
+    // LINE履歴をパースして構造化する関数
+    function parseLINEChat(text) {
         // 必要に応じて文字コード修正
         text = fixTextEncoding(text);
-        
-        // チャットメッセージをクリア
-        chatMessages.innerHTML = '';
         
         // 改行で分割して行ごとに処理
         const lines = text.split(/\r?\n/);
@@ -210,18 +281,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 const time = messageMatch[1];
                 const name = messageMatch[2].replace(':', '').trim();
                 
-                // 複数行メッセージの引用符を削除（最初と最後の"を削除）
+                // メッセージ内容を取得
                 let content = messageMatch[3].trim();
-                if (content.startsWith('"') && content.endsWith('"') && content.length > 2) {
-                    content = content.substring(1, content.length - 1);
-                }
                 
                 currentMessage = {
                     type: 'message',
                     time: time,
                     name: name,
                     content: content,
-                    isMultiLine: false
+                    isMultiLine: false,
+                    rawContent: content // 元のコンテンツを保存
                 };
                 messages.push(currentMessage);
                 continue;
@@ -240,27 +309,52 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 前のメッセージの続きと判断（インデントや改行後のテキストなど）
             if (currentMessage) {
-                // 複数行メッセージの前後の引用符も削除
-                let lineContent = line;
-                if (i === lines.length - 1 && lineContent.endsWith('"')) {
-                    lineContent = lineContent.substring(0, lineContent.length - 1);
-                }
-                if (lineContent.startsWith('"') && i === i + 1) {
-                    lineContent = lineContent.substring(1);
-                }
-                
-                currentMessage.content += '\n' + lineContent;
+                currentMessage.content += '\n' + line;
                 currentMessage.isMultiLine = true;
+                currentMessage.rawContent += '\n' + line; // 元のコンテンツも更新
             }
         }
+        
+        // 文頭と文末の引用符を処理
+        messages.forEach(msg => {
+            if (msg.type === 'message') {
+                let content = msg.content;
+                
+                // 先頭と末尾の引用符を削除（単一行と複数行の両方に対応）
+                if (content.startsWith('"') && content.endsWith('"')) {
+                    content = content.substring(1, content.length - 1);
+                    msg.content = content;
+                } else if (msg.isMultiLine) {
+                    // 複数行の場合、最初の行の先頭と最後の行の末尾のみチェック
+                    const lines = content.split('\n');
+                    let modified = false;
+                    
+                    // 最初の行が引用符で始まっていれば削除
+                    if (lines[0].startsWith('"')) {
+                        lines[0] = lines[0].substring(1);
+                        modified = true;
+                    }
+                    
+                    // 最後の行が引用符で終わっていれば削除
+                    const lastIdx = lines.length - 1;
+                    if (lines[lastIdx].endsWith('"')) {
+                        lines[lastIdx] = lines[lastIdx].substring(0, lines[lastIdx].length - 1);
+                        modified = true;
+                    }
+                    
+                    if (modified) {
+                        msg.content = lines.join('\n');
+                    }
+                }
+            }
+        });
         
         // メッセージの表示順を設定（チェックボックスに応じて）
         if (reverseOrderCheckbox.checked) {
             messages.reverse();
         }
         
-        // メッセージの表示
-        renderMessages(messages);
+        return messages;
     }
 
     // 日付の表示形式を変換する関数
@@ -289,6 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // メッセージを表示する関数
     function renderMessages(messages) {
+        chatMessages.innerHTML = '';
         const fragment = document.createDocumentFragment();
         
         // ユーザー名と色のマッピング
@@ -305,9 +400,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .filter(name => name.length > 0);
             
         // デフォルトの「自分」判定用名前リスト
-        if (myUsernames.length === 0) {
-            myUsernames.push("あなた", "You", "(あなた)", "（あなた）");
-        }
+        const defaultUsernames = ["あなた", "You", "(あなた)", "（あなた）"];
+        const myUsernameList = myUsernames.length > 0 ? myUsernames : defaultUsernames;
         
         messages.forEach((msg, index) => {
             if (msg.type === 'date') {
@@ -330,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // メッセージの向きを決定（自分のメッセージは右側に）
-                const isMyMessage = myUsernames.some(name => 
+                const isMyMessage = myUsernameList.some(name => 
                     msg.name === name || 
                     msg.name.includes(name)
                 );
@@ -380,6 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         chatMessages.appendChild(fragment);
         chatMessages.scrollTop = reverseOrderCheckbox.checked ? 0 : chatMessages.scrollHeight;
+        
+        // 検索状態をリセット
+        clearSearch();
     }
 
     // 文字化けの修正関数
